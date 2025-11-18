@@ -157,116 +157,116 @@
 // 
 
 
-// pipeline {
-//     agent any
+pipeline {
+    agent any
 
-//     environment {
-//         GIT_CREDENTIALS = 'token' // Jenkins Git credentials ID
-//         REPO_URL        = 'https://github.com/Suhasreddy257/dashboardproject.git'
+    environment {
+        GIT_CREDENTIALS = 'token' // Jenkins Git credentials ID
+        REPO_URL        = 'https://github.com/Suhasreddy257/dashboardproject.git'
 
-//         // Base deploy path
-//         DEPLOY_BASE     = 'D:\\buildforpipeline'
-//         // Final app folder path under base: D:\buildforpipeline\xr-dashboard\browser
-//         APP_FOLDER      = 'D:\buildforpipeline\xr-dashboard\browser\'
+        // Base deploy path
+        DEPLOY_BASE     = 'D:\\buildforpipeline'
+        // Final app folder path under base: D:\buildforpipeline\xr-dashboard\browser
+        APP_FOLDER      = 'D:\buildforpipeline\xr-dashboard\browser\'
 
-//         NODE_PATH       = 'C:\\Program Files\\nodejs'  // Node.js install path
+        NODE_PATH       = 'C:\\Program Files\\nodejs'  // Node.js install path
 
-//         // IIS details
-//         IIS_SITE_NAME   = 'XRdashboardfrontend'
-//         IIS_PORT        = '9005'   // Used only if binding on this port is missing
-//     }
+        // IIS details
+        IIS_SITE_NAME   = 'XRdashboardfrontend'
+        IIS_PORT        = '9005'   // Used only if binding on this port is missing
+    }
 
-//     stages {
-//         stage('Checkout & Build') {
-//             steps {
-//                 withEnv(["PATH=${NODE_PATH};${env.PATH}"]) {
-//                     // Checkout branch
-//                     git branch: 'main',
-//                         credentialsId: "${GIT_CREDENTIALS}",
-//                         url: "${REPO_URL}"
+    stages {
+        stage('Checkout & Build') {
+            steps {
+                withEnv(["PATH=${NODE_PATH};${env.PATH}"]) {
+                    // Checkout branch
+                    git branch: 'main',
+                        credentialsId: "${GIT_CREDENTIALS}",
+                        url: "${REPO_URL}"
 
-//                     // Verify Node and npm
-//                     bat 'node -v'
-//                     bat 'npm -v'
+                    // Verify Node and npm
+                    bat 'node -v'
+                    bat 'npm -v'
 
-//                     // Install dependencies & build
-//                     bat 'npm install'
-//                     bat 'npm run build'
-//                 }
-//             }
-//         }
+                    // Install dependencies & build
+                    bat 'npm install'
+                    bat 'npm run build'
+                }
+            }
+        }
 
-//         stage('Deploy to Folder') {
-//             steps {
-//                 // Prepare target folder D:\buildforpipeline\xr-dashboard\browser
-//                 bat '''
-//                 echo Cleaning old deploy folder...
-//                 if exist "%DEPLOY_BASE%\\%APP_FOLDER%" (
-//                     rmdir /S /Q "%DEPLOY_BASE%\\%APP_FOLDER%"
-//                 )
+        stage('Deploy to Folder') {
+            steps {
+                // Prepare target folder D:\buildforpipeline\xr-dashboard\browser
+                bat '''
+                echo Cleaning old deploy folder...
+                if exist "%DEPLOY_BASE%\\%APP_FOLDER%" (
+                    rmdir /S /Q "%DEPLOY_BASE%\\%APP_FOLDER%"
+                )
 
-//                 echo Creating target folder...
-//                 mkdir "%DEPLOY_BASE%\\%APP_FOLDER%"
+                // echo Creating target folder...
+                // mkdir "%DEPLOY_BASE%\\%APP_FOLDER%"
 
-//                 echo Copying build output (dist) to target folder...
-//                 xcopy /E /Y dist "%DEPLOY_BASE%\\%APP_FOLDER%\\"
-//                 '''
-//             }
-//         }
+                echo Copying build output (dist) to target folder...
+                xcopy /E /Y dist "%DEPLOY_BASE%\\%APP_FOLDER%\\"
+                '''
+            }
+        }
 
-//         stage('Update IIS Site & Restart') {
-//             steps {
-//                 // Update IIS physical path and restart the site
-//                 powershell '''
-//                     Import-Module WebAdministration
+        stage('Update IIS Site & Restart') {
+            steps {
+                // Update IIS physical path and restart the site
+                powershell '''
+                    Import-Module WebAdministration
 
-//                     $siteName     = $env:IIS_SITE_NAME
-//                     $physicalPath = "$env:DEPLOY_BASE\\$env:APP_FOLDER"
-//                     $port         = [int]$env:IIS_PORT
+                    $siteName     = $env:IIS_SITE_NAME
+                    $physicalPath = "$env:DEPLOY_BASE\\$env:APP_FOLDER"
+                    $port         = [int]$env:IIS_PORT
 
-//                     Write-Host "Using IIS site: $siteName"
-//                     Write-Host "Setting physical path to: $physicalPath"
+                    Write-Host "Using IIS site: $siteName"
+                    Write-Host "Setting physical path to: $physicalPath"
 
-//                     # Get the site (will error if not existing)
-//                     $site = Get-Item "IIS:\\Sites\\$siteName" -ErrorAction Stop
+                    # Get the site (will error if not existing)
+                    $site = Get-Item "IIS:\\Sites\\$siteName" -ErrorAction Stop
 
-//                     # Set physical path for root application
-//                     Set-ItemProperty "IIS:\\Sites\\$siteName" -Name physicalPath -Value $physicalPath
+                    # Set physical path for root application
+                    Set-ItemProperty "IIS:\\Sites\\$siteName" -Name physicalPath -Value $physicalPath
 
-//                     # Build the pattern safely (no weird $variable: parsing)
-//                     $pattern = "*:" + $port + ":*"
+                    # Build the pattern safely (no weird $variable: parsing)
+                    $pattern = "*:" + $port + ":*"
 
-//                     # Check if a binding with that port already exists
-//                     $bindings = $site.Bindings.Collection
-//                     $hasPortBinding = $bindings | Where-Object {
-//                         $_.bindingInformation -like $pattern
-//                     }
+                    # Check if a binding with that port already exists
+                    $bindings = $site.Bindings.Collection
+                    $hasPortBinding = $bindings | Where-Object {
+                        $_.bindingInformation -like $pattern
+                    }
 
-//                     if (-not $hasPortBinding) {
-//                         Write-Host "Binding on port $port not found. Adding HTTP binding..."
-//                         New-WebBinding -Name $siteName -Protocol "http" -Port $port -IPAddress "*" -HostHeader ""
-//                     } else {
-//                         Write-Host "Binding on port $port already exists. No change."
-//                     }
+                    if (-not $hasPortBinding) {
+                        Write-Host "Binding on port $port not found. Adding HTTP binding..."
+                        New-WebBinding -Name $siteName -Protocol "http" -Port $port -IPAddress "*" -HostHeader ""
+                    } else {
+                        Write-Host "Binding on port $port already exists. No change."
+                    }
 
-//                     Write-Host "Restarting IIS site $siteName ..."
-//                     Restart-WebItem "IIS:\\Sites\\$siteName"
+                    Write-Host "Restarting IIS site $siteName ..."
+                    Restart-WebItem "IIS:\\Sites\\$siteName"
 
-//                     Write-Host "IIS update and restart completed."
-//                 '''
-//             }
-//         }
-//     }
+                    Write-Host "IIS update and restart completed."
+                '''
+            }
+        }
+    }
 
-//     post {
-//         success {
-//             echo 'Pipeline completed successfully!'
-//         }
-//         failure {
-//             echo 'Pipeline failed!'
-//         }
-//     }
-// }
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
+}
 
 
 // pipeline {
@@ -832,110 +832,3 @@
 //     }
 // }
 
-pipeline {
-    agent any
-
-    environment {
-        GIT_CREDENTIALS = 'token'
-        REPO_URL        = 'https://github.com/Suhasreddy257/frontend_xrdashboard.git'
-
-        NODE_PATH       = 'C:\\Program Files\\nodejs'
-
-        IIS_SITE_NAME   = 'XRdashboardfrontend'
-        IIS_PORT        = '9005'
-
-        // Extra folder location
-        EXTRA_FOLDER_SOURCE = 'D:\\extra'
-
-        // Hardcoded final deploy path
-        DEPLOY_PATH = 'D:\\buildforpipeline\\xr-dashboard\\browser\\xr-dashboard\\browser'
-    }
-
-    stages {
-
-        stage('Checkout & Build') {
-            steps {
-                withEnv(["PATH=${NODE_PATH};${env.PATH}"]) {
-
-                    git branch: 'main',
-                        credentialsId: "${GIT_CREDENTIALS}",
-                        url: "${REPO_URL}"
-
-                    bat 'node -v'
-                    bat 'npm -v'
-
-                    bat 'npm install'
-                    bat 'npm run build'
-                }
-            }
-        }
-
-        stage('Deploy to Folder') {
-            steps {
-                bat """
-                REM Clean only the contents of the deploy folder, keep the folder itself
-                if exist "${DEPLOY_PATH}\\*" (
-                    echo Cleaning existing deploy folder contents...
-                    del /Q /F "${DEPLOY_PATH}\\*"
-                    for /d %%D in ("${DEPLOY_PATH}\\*") do rmdir /S /Q "%%D"
-                )
-
-                echo Copying build output to deploy folder...
-                xcopy /E /I /Y "dist\\*" "${DEPLOY_PATH}\\"
-
-                echo Copying EXTRA folder contents into deploy folder...
-                if exist "${EXTRA_FOLDER_SOURCE}" (
-                    xcopy /E /I /Y "${EXTRA_FOLDER_SOURCE}\\*" "${DEPLOY_PATH}\\"
-                ) else (
-                    echo EXTRA FOLDER NOT FOUND: ${EXTRA_FOLDER_SOURCE}
-                )
-                """
-            }
-        }
-
-        stage('Update IIS Site & Restart') {
-            steps {
-                powershell """
-                    Import-Module WebAdministration
-
-                    $siteName = '${IIS_SITE_NAME}'
-                    $physicalPath = '${DEPLOY_PATH}'
-                    $port = [int]${IIS_PORT}
-
-                    Write-Host "Setting IIS site path to: $physicalPath"
-
-                    # Ensure IIS site exists
-                    $site = Get-Item "IIS:\\Sites\\$siteName" -ErrorAction Stop
-
-                    # Update physical path
-                    Set-ItemProperty "IIS:\\Sites\\$siteName" -Name physicalPath -Value $physicalPath
-
-                    # Check if port binding exists
-                    $pattern = "*:" + $port + ":*"
-                    $bindings = $site.Bindings.Collection
-                    $hasPortBinding = $bindings | Where-Object { $_.bindingInformation -like $pattern }
-
-                    if (-not $hasPortBinding) {
-                        Write-Host "Adding port $port binding..."
-                        New-WebBinding -Name $siteName -Protocol "http" -Port $port -IPAddress "*" -HostHeader ""
-                    }
-
-                    Write-Host "Restarting IIS site..."
-                    Restart-WebItem "IIS:\\Sites\\$siteName"
-
-                    Write-Host "IIS update completed successfully"
-                """
-            }
-        }
-    }
-
-    post {
-        success {
-            echo 'Pipeline completed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed!'
-        }
-    }
-
-}
