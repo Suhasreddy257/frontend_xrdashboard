@@ -494,6 +494,119 @@
 //     }
 // }
 
+// pipeline {
+//     agent any
+
+//     environment {
+//         GIT_CREDENTIALS = 'token'
+//         REPO_URL        = 'https://github.com/Suhasreddy257/frontend_xrdashboard.git'
+
+//         // Base deploy folder
+//         DEPLOY_BASE     = 'D:\\buildforpipeline'
+
+//         // Final deploy folder → D:\buildforpipeline\xr-dashboard\browser\xr-dashboard\browser
+//         APP_FOLDER      = 'xr-dashboard\\browser\\xr-dashboard\\browser'
+
+//         NODE_PATH       = 'C:\\Program Files\\nodejs'
+
+//         IIS_SITE_NAME   = 'XRdashboardfrontend'
+//         IIS_PORT        = '9005'
+
+//         // EXTRA FOLDER LOCATION
+//         EXTRA_FOLDER_SOURCE = 'D:\\extra'
+//     }
+
+//     stages {
+
+//         stage('Checkout & Build') {
+//             steps {
+//                 withEnv(["PATH=${NODE_PATH};${env.PATH}"]) {
+
+//                     git branch: 'main',
+//                         credentialsId: "${GIT_CREDENTIALS}",
+//                         url: "${REPO_URL}"
+
+//                     bat 'node -v'
+//                     bat 'npm -v'
+
+//                     bat 'npm install'
+//                     bat 'npm run build'
+//                 }
+//             }
+//         }
+
+//         stage('Deploy to Folder') {
+//             steps {
+//                 bat '''
+//                 echo Cleaning old deploy folder...
+
+//                 if exist "%DEPLOY_BASE%\\%APP_FOLDER%" (
+//                     rmdir /S /Q "%DEPLOY_BASE%\\%APP_FOLDER%"
+//                 )
+
+//                 echo Creating deploy directory...
+//                 mkdir "%DEPLOY_BASE%\\%APP_FOLDER%"
+
+//                 echo Copying build output...
+//                 xcopy /E /I /Y dist "%DEPLOY_BASE%\\%APP_FOLDER%\\"
+
+//                 echo Copying EXTRA FOLDER into deployed browser folder...
+//                 if exist "%EXTRA_FOLDER_SOURCE%" (
+//                     xcopy /E /I /Y "%EXTRA_FOLDER_SOURCE%\\*" "%DEPLOY_BASE%\\%APP_FOLDER%\\"
+//                 ) else (
+//                     echo EXTRA FOLDER NOT FOUND: %EXTRA_FOLDER_SOURCE%
+//                 )
+//                 '''
+//             }
+//         }
+
+//         stage('Update IIS Site & Restart') {
+//             steps {
+//                 powershell '''
+//                     Import-Module WebAdministration
+
+//                     $siteName = $env:IIS_SITE_NAME
+//                     $physicalPath = "$env:DEPLOY_BASE\\$env:APP_FOLDER"
+//                     $port = [int]$env:IIS_PORT
+
+//                     Write-Host "Setting IIS site path to: $physicalPath"
+
+//                     $site = Get-Item "IIS:\\Sites\\$siteName" -ErrorAction Stop
+
+//                     Set-ItemProperty "IIS:\\Sites\\$siteName" -Name physicalPath -Value $physicalPath
+
+//                     $pattern = "*:" + $port + ":*"
+//                     $bindings = $site.Bindings.Collection
+
+//                     $hasPortBinding = $bindings | Where-Object {
+//                         $_.bindingInformation -like $pattern
+//                     }
+
+//                     if (-not $hasPortBinding) {
+//                         Write-Host "Adding port $port binding..."
+//                         New-WebBinding -Name $siteName -Protocol "http" -Port $port -IPAddress "*" -HostHeader ""
+//                     }
+
+//                     Write-Host "Restarting IIS site..."
+//                     Restart-WebItem "IIS:\\Sites\\$siteName"
+
+//                     Write-Host "IIS update completed successfully"
+//                 '''
+//             }
+//         }
+//     }
+
+//     post {
+//         success {
+//             echo 'Pipeline completed successfully!'
+//         }
+//         failure {
+//             echo 'Pipeline failed!'
+//         }
+//     }
+// }
+
+
 pipeline {
     agent any
 
@@ -505,7 +618,7 @@ pipeline {
         DEPLOY_BASE     = 'D:\\buildforpipeline'
 
         // Final deploy folder → D:\buildforpipeline\xr-dashboard\browser\xr-dashboard\browser
-        APP_FOLDER      = 'xr-dashboard\\browser\\xr-dashboard\\browser'
+        APP_FOLDER      = 'xr-dashboard\\browser'
 
         NODE_PATH       = 'C:\\Program Files\\nodejs'
 
@@ -539,7 +652,6 @@ pipeline {
             steps {
                 bat '''
                 echo Cleaning old deploy folder...
-
                 if exist "%DEPLOY_BASE%\\%APP_FOLDER%" (
                     rmdir /S /Q "%DEPLOY_BASE%\\%APP_FOLDER%"
                 )
@@ -550,7 +662,7 @@ pipeline {
                 echo Copying build output...
                 xcopy /E /I /Y dist "%DEPLOY_BASE%\\%APP_FOLDER%\\"
 
-                echo Copying EXTRA FOLDER into deployed browser folder...
+                echo Copying EXTRA FOLDER contents directly into deployed browser folder...
                 if exist "%EXTRA_FOLDER_SOURCE%" (
                     xcopy /E /I /Y "%EXTRA_FOLDER_SOURCE%\\*" "%DEPLOY_BASE%\\%APP_FOLDER%\\"
                 ) else (
