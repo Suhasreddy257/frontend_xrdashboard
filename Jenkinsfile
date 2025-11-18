@@ -839,12 +839,6 @@ pipeline {
         GIT_CREDENTIALS = 'token'
         REPO_URL        = 'https://github.com/Suhasreddy257/frontend_xrdashboard.git'
 
-        // Base deploy folder
-        DEPLOY_BASE     = 'D:\\buildforpipeline'
-
-        // Final deploy folder → D:\buildforpipeline\xr-dashboard\browser\xr-dashboard\browser
-        APP_FOLDER      = 'xr-dashboard\\browser\\xr-dashboard\\browser'
-
         NODE_PATH       = 'C:\\Program Files\\nodejs'
 
         IIS_SITE_NAME   = 'XRdashboardfrontend'
@@ -852,6 +846,9 @@ pipeline {
 
         // Extra folder location
         EXTRA_FOLDER_SOURCE = 'D:\\extra'
+
+        // Hardcoded final deploy path
+        DEPLOY_PATH = 'D:\\buildforpipeline\\xr-dashboard\\browser\\xr-dashboard\\browser'
     }
 
     stages {
@@ -875,36 +872,35 @@ pipeline {
 
         stage('Deploy to Folder') {
             steps {
-                bat '''
+                bat """
                 REM Clean only the contents of the deploy folder, keep the folder itself
-                if exist "%DEPLOY_BASE%\\%APP_FOLDER%\\*" (
+                if exist "${DEPLOY_PATH}\\*" (
                     echo Cleaning existing deploy folder contents...
-                    del /Q /F "%DEPLOY_BASE%\\%APP_FOLDER%\\*"
-                    for /d %%D in ("%DEPLOY_BASE%\\%APP_FOLDER%\\*") do rmdir /S /Q "%%D"
+                    del /Q /F "${DEPLOY_PATH}\\*"
+                    for /d %%D in ("${DEPLOY_PATH}\\*") do rmdir /S /Q "%%D"
                 )
 
                 echo Copying build output to deploy folder...
-                REM Copy only contents of dist, not the dist folder itself
-                xcopy /E /I /Y "dist\\*" "%DEPLOY_BASE%\\%APP_FOLDER%\\"
+                xcopy /E /I /Y "dist\\*" "${DEPLOY_PATH}\\"
 
                 echo Copying EXTRA folder contents into deploy folder...
-                if exist "%EXTRA_FOLDER_SOURCE%" (
-                    xcopy /E /I /Y "%EXTRA_FOLDER_SOURCE%\\*" "%DEPLOY_BASE%\\%APP_FOLDER%\\"
+                if exist "${EXTRA_FOLDER_SOURCE}" (
+                    xcopy /E /I /Y "${EXTRA_FOLDER_SOURCE}\\*" "${DEPLOY_PATH}\\"
                 ) else (
-                    echo EXTRA FOLDER NOT FOUND: %EXTRA_FOLDER_SOURCE%
+                    echo EXTRA FOLDER NOT FOUND: ${EXTRA_FOLDER_SOURCE}
                 )
-                '''
+                """
             }
         }
 
         stage('Update IIS Site & Restart') {
             steps {
-                powershell '''
+                powershell """
                     Import-Module WebAdministration
 
-                    $siteName = $env:IIS_SITE_NAME
-                    $physicalPath = Join-Path $env:DEPLOY_BASE $env:APP_FOLDER
-                    $port = [int]$env:IIS_PORT
+                    $siteName = '${IIS_SITE_NAME}'
+                    $physicalPath = '${DEPLOY_PATH}'
+                    $port = [int]${IIS_PORT}
 
                     Write-Host "Setting IIS site path to: $physicalPath"
 
@@ -928,7 +924,7 @@ pipeline {
                     Restart-WebItem "IIS:\\Sites\\$siteName"
 
                     Write-Host "IIS update completed successfully"
-                '''
+                """
             }
         }
     }
@@ -941,4 +937,5 @@ pipeline {
             echo 'Pipeline failed!'
         }
     }
+
 }
