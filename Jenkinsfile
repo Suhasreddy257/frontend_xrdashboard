@@ -736,7 +736,7 @@ pipeline {
         IIS_SITE_NAME   = 'XRdashboardfrontend'
         IIS_PORT        = '9005'
 
-        // EXTRA FOLDER LOCATION
+        // Extra folder location
         EXTRA_FOLDER_SOURCE = 'D:\\extra'
     }
 
@@ -771,7 +771,8 @@ pipeline {
                 mkdir "%DEPLOY_BASE%\\%APP_FOLDER%"
 
                 echo Copying build output to deploy folder...
-                xcopy /E /I /Y dist "%DEPLOY_BASE%\\%APP_FOLDER%\\"
+                REM Copy only contents of dist, not dist folder itself
+                xcopy /E /I /Y "dist\\*" "%DEPLOY_BASE%\\%APP_FOLDER%\\"
 
                 echo Copying EXTRA folder contents into deploy folder...
                 if exist "%EXTRA_FOLDER_SOURCE%" (
