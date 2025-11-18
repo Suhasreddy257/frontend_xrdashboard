@@ -162,7 +162,7 @@ pipeline {
 
     environment {
         GIT_CREDENTIALS = 'token' // Jenkins Git credentials ID
-        REPO_URL        = 'https://github.com/Suhasreddy257/dashboardproject.git'
+        REPO_URL        = 'https://github.com/Suhasreddy257/frontend_xrdashboard.git'
 
         // Base deploy path
         DEPLOY_BASE     = 'D:\\buildforpipeline'
