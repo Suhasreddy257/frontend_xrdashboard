@@ -166,8 +166,8 @@ pipeline {
 
         // Base deploy path
         DEPLOY_BASE     = 'D:\\buildforpipeline'
-        // Final app folder path under base: D:\buildforpipeline\xr-dashboard\browser
-        APP_FOLDER      = 'D:\buildforpipeline\xr-dashboard\browser\'
+        // Final app folder path under base: D:\\buildforpipeline\\xr-dashboard\\browser
+        APP_FOLDER      = 'D:\\buildforpipeline\\xr-dashboard\\browser\\'
 
         NODE_PATH       = 'C:\\Program Files\\nodejs'  // Node.js install path
 
@@ -198,15 +198,12 @@ pipeline {
 
         stage('Deploy to Folder') {
             steps {
-                // Prepare target folder D:\buildforpipeline\xr-dashboard\browser
+                // Prepare target folder D:\\buildforpipeline\\xr-dashboard\\browser
                 bat '''
                 echo Cleaning old deploy folder...
                 if exist "%DEPLOY_BASE%\\%APP_FOLDER%" (
                     rmdir /S /Q "%DEPLOY_BASE%\\%APP_FOLDER%"
                 )
-
-                // echo Creating target folder...
-                // mkdir "%DEPLOY_BASE%\\%APP_FOLDER%"
 
                 echo Copying build output (dist) to target folder...
                 xcopy /E /Y dist "%DEPLOY_BASE%\\%APP_FOLDER%\\"
@@ -267,6 +264,7 @@ pipeline {
         }
     }
 }
+
 
 
 // pipeline {
