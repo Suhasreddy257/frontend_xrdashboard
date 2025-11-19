@@ -376,11 +376,213 @@
 
 // Jenkinsfile - complete working pipeline with secure email notifications
 // Jenkinsfile - Robust pipeline with email notifications (uses credential 'personal-email' if present, else falls back to PERSONAL_EMAIL)
+// working the pipeline is getting the succes but come to sms is not sending 
+// pipeline {
+//     agent any
+
+//     environment {
+//         // Repo and build settings
+//         GIT_CREDENTIALS     = 'token'
+//         REPO_URL            = 'https://github.com/Suhasreddy257/frontend_xrdashboard.git'
+
+//         DEPLOY_BASE         = 'D:\\buildforpipeline'
+//         APP_FOLDER          = 'xr-dashboard\\browser'
+
+//         NODE_PATH           = 'C:\\Program Files\\nodejs'
+
+//         IIS_SITE_NAME       = 'XRdashboardfrontend'
+//         IIS_PORT            = '9005'
+
+//         EXTRA_FOLDER_SOURCE = 'D:\\extra'
+
+//         // Fallback recipient (only used if 'personal-email' credential is NOT present).
+//         // Recommended: create the credential 'personal-email' instead of using this.
+//         PERSONAL_EMAIL      = 'reddydr257@gmail.com'
+//     }
+
+//     stages {
+//         stage('Checkout & Build') {
+//             steps {
+//                 withEnv(["PATH=${NODE_PATH};${env.PATH}"]) {
+//                     // Checkout code
+//                     git branch: 'main',
+//                         credentialsId: "${GIT_CREDENTIALS}",
+//                         url: "${REPO_URL}"
+
+//                     // Diagnostics
+//                     bat 'node -v'
+//                     bat 'npm -v'
+
+//                     // Build
+//                     bat 'npm install'
+//                     bat 'npm run build'
+//                 }
+//             }
+//         }
+
+//         stage('Deploy to Folder') {
+//             steps {
+//                 bat '''
+//                 echo Cleaning old deploy folder...
+//                 if exist "%DEPLOY_BASE%\\%APP_FOLDER%" (
+//                     rmdir /S /Q "%DEPLOY_BASE%\\%APP_FOLDER%"
+//                 )
+
+//                 echo Creating target folder...
+//                 mkdir "%DEPLOY_BASE%\\%APP_FOLDER%"
+
+//                 echo Copying ONLY inner build folder...
+//                 xcopy /E /I /Y "dist\\xr-dashboard\\browser\\*" "%DEPLOY_BASE%\\%APP_FOLDER%\\"
+
+//                 echo Copying EXTRA folder...
+//                 if exist "%EXTRA_FOLDER_SOURCE%" (
+//                     xcopy /E /I /Y "%EXTRA_FOLDER_SOURCE%\\*" "%DEPLOY_BASE%\\%APP_FOLDER%\\"
+//                 ) else (
+//                     echo EXTRA FOLDER NOT FOUND: %EXTRA_FOLDER_SOURCE%
+//                 )
+//                 '''
+//             }
+//         }
+
+//         stage('Update IIS Site & Restart') {
+//             steps {
+//                 powershell '''
+//                     Import-Module WebAdministration
+
+//                     $siteName     = $env:IIS_SITE_NAME
+//                     $physicalPath = "$env:DEPLOY_BASE\\$env:APP_FOLDER"
+//                     $port         = [int]$env:IIS_PORT
+
+//                     Write-Host "Setting IIS Physical Path to $physicalPath"
+
+//                     $site = Get-Item "IIS:\\Sites\\$siteName" -ErrorAction Stop
+
+//                     Set-ItemProperty "IIS:\\Sites\\$siteName" -Name physicalPath -Value $physicalPath
+
+//                     $pattern = "*:" + $port + ":*"
+//                     $bindings = $site.Bindings.Collection
+//                     $hasPortBinding = $bindings | Where-Object { $_.bindingInformation -like $pattern }
+
+//                     if (-not $hasPortBinding) {
+//                         New-WebBinding -Name $siteName -Protocol "http" -Port $port -IPAddress "*" -HostHeader ""
+//                     }
+
+//                     Restart-WebItem "IIS:\\Sites\\$siteName"
+//                 '''
+//             }
+//         }
+//     }
+
+//     post {
+//         success {
+//             echo 'Build succeeded — sending notification email.'
+
+//             script {
+//                 // Determine recipient safely: prefer credential 'personal-email' if present, else fallback to env.PERSONAL_EMAIL
+//                 def recipient = null
+//                 try {
+//                     withCredentials([string(credentialsId: 'personal-email', variable: 'RECIPIENT')]) {
+//                         recipient = env.RECIPIENT
+//                     }
+//                 } catch (err) {
+//                     // credential not present or inaccessible — fallback to env variable
+//                     recipient = env.PERSONAL_EMAIL
+//                     echo "personal-email credential not found, falling back to PERSONAL_EMAIL: ${recipient}"
+//                 }
+
+//                 // Compose subject & body
+//                 def subject = "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+//                 def htmlBody = """
+//                     <html><body>
+//                         <h3>Build Succeeded ✅</h3>
+//                         <p><b>Job:</b> ${env.JOB_NAME}</p>
+//                         <p><b>Build:</b> <a href='${env.BUILD_URL}'>#${env.BUILD_NUMBER}</a></p>
+//                         <p><b>Node:</b> ${env.NODE_NAME ?: 'controller'}</p>
+//                         <p>Deployment path: <code>${env.DEPLOY_BASE}\\${env.APP_FOLDER}</code></p>
+//                         <hr/>
+//                         <p>Regards,<br/>Jenkins</p>
+//                     </body></html>
+//                 """
+
+//                 // Try emailext (rich) first, if plugin available. If emailext call fails (plugin missing), fall back to mail.
+//                 try {
+//                     emailext(
+//                         subject: subject,
+//                         mimeType: 'text/html',
+//                         to: recipient,
+//                         body: htmlBody,
+//                         attachLog: true
+//                     )
+//                     echo "Email sent using emailext to ${recipient}"
+//                 } catch (e) {
+//                     echo "emailext not available or failed: ${e.toString()}"
+//                     // fallback: use built-in mail step
+//                     mail to: recipient,
+//                          subject: subject,
+//                          body: "Build succeeded: ${env.JOB_NAME} #${env.BUILD_NUMBER}\n${env.BUILD_URL}"
+//                     echo "Email sent using mail to ${recipient}"
+//                 }
+//             }
+//         }
+
+//         failure {
+//             echo 'Build failed — sending failure notification.'
+
+//             script {
+//                 def recipient = null
+//                 try {
+//                     withCredentials([string(credentialsId: 'personal-email', variable: 'RECIPIENT')]) {
+//                         recipient = env.RECIPIENT
+//                     }
+//                 } catch (err) {
+//                     recipient = env.PERSONAL_EMAIL
+//                     echo "personal-email credential not found, falling back to PERSONAL_EMAIL: ${recipient}"
+//                 }
+
+//                 def subject = "FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+//                 def htmlBody = """
+//                     <html><body>
+//                         <h3>Build Failed ❌</h3>
+//                         <p><b>Job:</b> ${env.JOB_NAME}</p>
+//                         <p><b>Build:</b> <a href='${env.BUILD_URL}'>#${env.BUILD_NUMBER}</a></p>
+//                         <p>Please check the console output for more details.</p>
+//                         <hr/>
+//                         <p>Regards,<br/>Jenkins</p>
+//                     </body></html>
+//                 """
+
+//                 try {
+//                     emailext(
+//                         subject: subject,
+//                         mimeType: 'text/html',
+//                         to: recipient,
+//                         body: htmlBody,
+//                         attachLog: true
+//                     )
+//                     echo "Failure email sent using emailext to ${recipient}"
+//                 } catch (e) {
+//                     echo "emailext not available or failed: ${e.toString()}"
+//                     mail to: recipient,
+//                          subject: subject,
+//                          body: "Build FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}\n${env.BUILD_URL}"
+//                     echo "Failure email sent using mail to ${recipient}"
+//                 }
+//             }
+//         }
+
+//         always {
+//             echo 'Post actions completed.'
+//         }
+//     }
+// }
+
+
+// Jenkinsfile - robust pipeline that sends email notifications
 pipeline {
     agent any
 
     environment {
-        // Repo and build settings
+        // Project settings
         GIT_CREDENTIALS     = 'token'
         REPO_URL            = 'https://github.com/Suhasreddy257/frontend_xrdashboard.git'
 
@@ -394,8 +596,8 @@ pipeline {
 
         EXTRA_FOLDER_SOURCE = 'D:\\extra'
 
-        // Fallback recipient (only used if 'personal-email' credential is NOT present).
-        // Recommended: create the credential 'personal-email' instead of using this.
+        // Fallback recipient if credential 'personal-email' is not created.
+        // Recommended: create a Secret Text credential with ID 'personal-email' and value 'reddydr257@gmail.com'
         PERSONAL_EMAIL      = 'reddydr257@gmail.com'
     }
 
@@ -403,7 +605,7 @@ pipeline {
         stage('Checkout & Build') {
             steps {
                 withEnv(["PATH=${NODE_PATH};${env.PATH}"]) {
-                    // Checkout code
+                    // Checkout
                     git branch: 'main',
                         credentialsId: "${GIT_CREDENTIALS}",
                         url: "${REPO_URL}"
@@ -474,36 +676,36 @@ pipeline {
 
     post {
         success {
-            echo 'Build succeeded — sending notification email.'
-
             script {
-                // Determine recipient safely: prefer credential 'personal-email' if present, else fallback to env.PERSONAL_EMAIL
-                def recipient = null
+                echo "Build succeeded — preparing notification"
+
+                // Determine recipient: prefer credential 'personal-email', else use env.PERSONAL_EMAIL
+                def recipient = env.PERSONAL_EMAIL
                 try {
                     withCredentials([string(credentialsId: 'personal-email', variable: 'RECIPIENT')]) {
-                        recipient = env.RECIPIENT
+                        if (env.RECIPIENT?.trim()) {
+                            recipient = env.RECIPIENT
+                        }
                     }
-                } catch (err) {
-                    // credential not present or inaccessible — fallback to env variable
-                    recipient = env.PERSONAL_EMAIL
-                    echo "personal-email credential not found, falling back to PERSONAL_EMAIL: ${recipient}"
+                } catch (ignored) {
+                    // credential missing or inaccessible — already have fallback
+                    echo "personal-email credential not found; using PERSONAL_EMAIL fallback"
                 }
 
-                // Compose subject & body
                 def subject = "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
                 def htmlBody = """
                     <html><body>
-                        <h3>Build Succeeded ✅</h3>
-                        <p><b>Job:</b> ${env.JOB_NAME}</p>
-                        <p><b>Build:</b> <a href='${env.BUILD_URL}'>#${env.BUILD_NUMBER}</a></p>
-                        <p><b>Node:</b> ${env.NODE_NAME ?: 'controller'}</p>
-                        <p>Deployment path: <code>${env.DEPLOY_BASE}\\${env.APP_FOLDER}</code></p>
-                        <hr/>
-                        <p>Regards,<br/>Jenkins</p>
+                      <h2>Build Succeeded ✅</h2>
+                      <p><b>Job:</b> ${env.JOB_NAME}</p>
+                      <p><b>Build:</b> <a href='${env.BUILD_URL}'>#${env.BUILD_NUMBER}</a></p>
+                      <p><b>Node:</b> ${env.NODE_NAME ?: 'controller'}</p>
+                      <p>Deployment path: <code>${env.DEPLOY_BASE}\\${env.APP_FOLDER}</code></p>
+                      <hr/>
+                      <p>Regards,<br/>Jenkins</p>
                     </body></html>
                 """
 
-                // Try emailext (rich) first, if plugin available. If emailext call fails (plugin missing), fall back to mail.
+                // Try emailext first; on failure print stacktrace and fallback to mail
                 try {
                     emailext(
                         subject: subject,
@@ -512,41 +714,55 @@ pipeline {
                         body: htmlBody,
                         attachLog: true
                     )
-                    echo "Email sent using emailext to ${recipient}"
+                    echo "Notification sent via emailext to ${recipient}"
                 } catch (e) {
-                    echo "emailext not available or failed: ${e.toString()}"
-                    // fallback: use built-in mail step
-                    mail to: recipient,
-                         subject: subject,
-                         body: "Build succeeded: ${env.JOB_NAME} #${env.BUILD_NUMBER}\n${env.BUILD_URL}"
-                    echo "Email sent using mail to ${recipient}"
+                    echo "emailext failed to send email: ${e.toString()}"
+
+                    // Print full stacktrace for diagnosis (safe: does not include secrets)
+                    def sw = new StringWriter()
+                    e.printStackTrace(new PrintWriter(sw))
+                    echo "emailext stacktrace:\n${sw.toString()}"
+
+                    // Fallback to mail()
+                    try {
+                        mail to: recipient,
+                             subject: subject,
+                             body: "Build succeeded: ${env.JOB_NAME} #${env.BUILD_NUMBER}\n${env.BUILD_URL}"
+                        echo "Notification sent via mail() fallback to ${recipient}"
+                    } catch (e2) {
+                        echo "mail() fallback also failed: ${e2.toString()}"
+                        def sw2 = new StringWriter()
+                        e2.printStackTrace(new PrintWriter(sw2))
+                        echo "mail() fallback stacktrace:\n${sw2.toString()}"
+                    }
                 }
             }
         }
 
         failure {
-            echo 'Build failed — sending failure notification.'
-
             script {
-                def recipient = null
+                echo "Build failed — preparing notification"
+
+                def recipient = env.PERSONAL_EMAIL
                 try {
                     withCredentials([string(credentialsId: 'personal-email', variable: 'RECIPIENT')]) {
-                        recipient = env.RECIPIENT
+                        if (env.RECIPIENT?.trim()) {
+                            recipient = env.RECIPIENT
+                        }
                     }
-                } catch (err) {
-                    recipient = env.PERSONAL_EMAIL
-                    echo "personal-email credential not found, falling back to PERSONAL_EMAIL: ${recipient}"
+                } catch (ignored) {
+                    echo "personal-email credential not found; using PERSONAL_EMAIL fallback"
                 }
 
                 def subject = "FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
                 def htmlBody = """
                     <html><body>
-                        <h3>Build Failed ❌</h3>
-                        <p><b>Job:</b> ${env.JOB_NAME}</p>
-                        <p><b>Build:</b> <a href='${env.BUILD_URL}'>#${env.BUILD_NUMBER}</a></p>
-                        <p>Please check the console output for more details.</p>
-                        <hr/>
-                        <p>Regards,<br/>Jenkins</p>
+                      <h2>Build Failed ❌</h2>
+                      <p><b>Job:</b> ${env.JOB_NAME}</p>
+                      <p><b>Build:</b> <a href='${env.BUILD_URL}'>#${env.BUILD_NUMBER}</a></p>
+                      <p>Please review the console output for details.</p>
+                      <hr/>
+                      <p>Regards,<br/>Jenkins</p>
                     </body></html>
                 """
 
@@ -558,22 +774,37 @@ pipeline {
                         body: htmlBody,
                         attachLog: true
                     )
-                    echo "Failure email sent using emailext to ${recipient}"
+                    echo "Failure notification sent via emailext to ${recipient}"
                 } catch (e) {
-                    echo "emailext not available or failed: ${e.toString()}"
-                    mail to: recipient,
-                         subject: subject,
-                         body: "Build FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}\n${env.BUILD_URL}"
-                    echo "Failure email sent using mail to ${recipient}"
+                    echo "emailext failed to send failure email: ${e.toString()}"
+                    def sw = new StringWriter()
+                    e.printStackTrace(new PrintWriter(sw))
+                    echo "emailext stacktrace:\n${sw.toString()}"
+
+                    try {
+                        mail to: recipient,
+                             subject: subject,
+                             body: "Build FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}\n${env.BUILD_URL}"
+                        echo "Failure notification sent via mail() fallback to ${recipient}"
+                    } catch (e2) {
+                        echo "mail() fallback also failed: ${e2.toString()}"
+                        def sw2 = new StringWriter()
+                        e2.printStackTrace(new PrintWriter(sw2))
+                        echo "mail() fallback stacktrace:\n${sw2.toString()}"
+                    }
                 }
             }
         }
 
         always {
-            echo 'Post actions completed.'
+            echo "Post actions finished."
         }
     }
 }
+
+
+
+
 
 
 
