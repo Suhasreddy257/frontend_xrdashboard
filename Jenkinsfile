@@ -1,107 +1,3 @@
-// pipeline {
-//     agent any
-
-//     environment {
-//         GIT_CREDENTIALS = 'token'
-//         REPO_URL        = 'https://github.com/Suhasreddy257/xrdashboard.git'
-
-//         // PROJECT_DIR     = 'xr-dashbaoard-frontend-dev'
-//         BUILD_OUTPUT    = 'dist\\xr-dashboard\\browser'
-
-//         DEPLOY_PATH     = 'D:\\buildforpipeline'
-//         NODE_PATH       = 'C:\\Program Files\\nodejs'
-//         IIS_SITE_NAME   = 'XRdashboardfrontend'
-//     }
-
-//     // stages {
-//     //     stage('Checkout & Build') {
-//     //         steps {
-//     //             withEnv(["PATH=${NODE_PATH};${env.PATH}"]) {
-//     //                 // Checkout the correct branch
-//     //                 git branch: 'main', credentialsId: "${GIT_CREDENTIALS}", url: "${REPO_URL}"
- 
-//     //                 // Verify Node and npm
-//     //                 bat 'node -v'
-//     //                 bat 'npm -v'
- 
-//     //                 // Install dependencies & build
-//     //                 bat 'npm install'
-//     //                 bat 'npm run build'
-//     //             }
-//     //         }
-//     //     }
-
-
-//     stages {
-//         stage('Checkout & Build') {
-//             steps {
-//                 withEnv(["PATH=${NODE_PATH};${env.PATH}"]) {
-
-//                     git branch: 'main',
-//                         credentialsId: "${GIT_CREDENTIALS}",
-//                         url: "${REPO_URL}"
-
-//                     dir("${PROJECT_DIR}") {
-//                         bat 'dir'
-//                         bat 'node -v'
-//                         bat 'npm -v'
-//                         bat 'npm install'
-//                         bat 'npm run build'
-//                     }
-//                 }
-//             }
-//         }
-
-//         stage('Deploy to IIS') {
-//             steps {
-//                 withEnv(["PATH=${NODE_PATH};${env.PATH}"]) {
-
-//                     dir("${PROJECT_DIR}") {
-
-//                         // bat """
-//                         // IF NOT EXIST "${DEPLOY_PATH}" (
-//                         //     mkdir "${DEPLOY_PATH}"
-//                         // )
-//                         // """
-
-//                         bat """
-//                         robocopy "${BUILD_OUTPUT}" "${DEPLOY_PATH}" /MIR
-//                         IF %ERRORLEVEL% LEQ 3 (
-//                             EXIT /B 0
-//                         ) ELSE (
-//                             EXIT /B %ERRORLEVEL%
-//                         )
-//                         """
-
-//                         // Safe IIS restart
-//                         bat """
-//                         powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-//                           "Import-Module WebAdministration; ^
-//                            if (Get-Command Stop-Website -ErrorAction SilentlyContinue) { ^
-//                                Write-Host 'Restarting IIS site ${XRdashboardfrontend}...'; ^
-//                                Stop-Website -Name '${XRdashboardfrontend}' -ErrorAction SilentlyContinue; ^
-//                                Start-Website -Name '${XRdashboardfrontend}' -ErrorAction SilentlyContinue; ^
-//                                Write-Host 'IIS restart complete.'; ^
-//                            } else { ^
-//                                Write-Host 'IIS Website cmdlets not available, skipping restart.' ^
-//                            }"
-//                         """
-
-//                     }
-//                 }
-//             }
-//         }
-//     }
-
-//     post {
-//         success {
-//             echo 'Pipeline completed successfully!'
-//         }
-//         failure {
-//             echo 'Pipeline failed!'
-//         }
-//     }
-// }
 
 
 // pipeline {
@@ -375,208 +271,7 @@
 // }
 
 // Jenkinsfile - complete working pipeline with secure email notifications
-// Jenkinsfile - Robust pipeline with email notifications (uses credential 'personal-email' if present, else falls back to PERSONAL_EMAIL)
-// working the pipeline is getting the succes but come to sms is not sending 
-// pipeline {
-//     agent any
 
-//     environment {
-//         // Repo and build settings
-//         GIT_CREDENTIALS     = 'token'
-//         REPO_URL            = 'https://github.com/Suhasreddy257/frontend_xrdashboard.git'
-
-//         DEPLOY_BASE         = 'D:\\buildforpipeline'
-//         APP_FOLDER          = 'xr-dashboard\\browser'
-
-//         NODE_PATH           = 'C:\\Program Files\\nodejs'
-
-//         IIS_SITE_NAME       = 'XRdashboardfrontend'
-//         IIS_PORT            = '9005'
-
-//         EXTRA_FOLDER_SOURCE = 'D:\\extra'
-
-//         // Fallback recipient (only used if 'personal-email' credential is NOT present).
-//         // Recommended: create the credential 'personal-email' instead of using this.
-//         PERSONAL_EMAIL      = 'reddydr257@gmail.com'
-//     }
-
-//     stages {
-//         stage('Checkout & Build') {
-//             steps {
-//                 withEnv(["PATH=${NODE_PATH};${env.PATH}"]) {
-//                     // Checkout code
-//                     git branch: 'main',
-//                         credentialsId: "${GIT_CREDENTIALS}",
-//                         url: "${REPO_URL}"
-
-//                     // Diagnostics
-//                     bat 'node -v'
-//                     bat 'npm -v'
-
-//                     // Build
-//                     bat 'npm install'
-//                     bat 'npm run build'
-//                 }
-//             }
-//         }
-
-//         stage('Deploy to Folder') {
-//             steps {
-//                 bat '''
-//                 echo Cleaning old deploy folder...
-//                 if exist "%DEPLOY_BASE%\\%APP_FOLDER%" (
-//                     rmdir /S /Q "%DEPLOY_BASE%\\%APP_FOLDER%"
-//                 )
-
-//                 echo Creating target folder...
-//                 mkdir "%DEPLOY_BASE%\\%APP_FOLDER%"
-
-//                 echo Copying ONLY inner build folder...
-//                 xcopy /E /I /Y "dist\\xr-dashboard\\browser\\*" "%DEPLOY_BASE%\\%APP_FOLDER%\\"
-
-//                 echo Copying EXTRA folder...
-//                 if exist "%EXTRA_FOLDER_SOURCE%" (
-//                     xcopy /E /I /Y "%EXTRA_FOLDER_SOURCE%\\*" "%DEPLOY_BASE%\\%APP_FOLDER%\\"
-//                 ) else (
-//                     echo EXTRA FOLDER NOT FOUND: %EXTRA_FOLDER_SOURCE%
-//                 )
-//                 '''
-//             }
-//         }
-
-//         stage('Update IIS Site & Restart') {
-//             steps {
-//                 powershell '''
-//                     Import-Module WebAdministration
-
-//                     $siteName     = $env:IIS_SITE_NAME
-//                     $physicalPath = "$env:DEPLOY_BASE\\$env:APP_FOLDER"
-//                     $port         = [int]$env:IIS_PORT
-
-//                     Write-Host "Setting IIS Physical Path to $physicalPath"
-
-//                     $site = Get-Item "IIS:\\Sites\\$siteName" -ErrorAction Stop
-
-//                     Set-ItemProperty "IIS:\\Sites\\$siteName" -Name physicalPath -Value $physicalPath
-
-//                     $pattern = "*:" + $port + ":*"
-//                     $bindings = $site.Bindings.Collection
-//                     $hasPortBinding = $bindings | Where-Object { $_.bindingInformation -like $pattern }
-
-//                     if (-not $hasPortBinding) {
-//                         New-WebBinding -Name $siteName -Protocol "http" -Port $port -IPAddress "*" -HostHeader ""
-//                     }
-
-//                     Restart-WebItem "IIS:\\Sites\\$siteName"
-//                 '''
-//             }
-//         }
-//     }
-
-//     post {
-//         success {
-//             echo 'Build succeeded — sending notification email.'
-
-//             script {
-//                 // Determine recipient safely: prefer credential 'personal-email' if present, else fallback to env.PERSONAL_EMAIL
-//                 def recipient = null
-//                 try {
-//                     withCredentials([string(credentialsId: 'personal-email', variable: 'RECIPIENT')]) {
-//                         recipient = env.RECIPIENT
-//                     }
-//                 } catch (err) {
-//                     // credential not present or inaccessible — fallback to env variable
-//                     recipient = env.PERSONAL_EMAIL
-//                     echo "personal-email credential not found, falling back to PERSONAL_EMAIL: ${recipient}"
-//                 }
-
-//                 // Compose subject & body
-//                 def subject = "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
-//                 def htmlBody = """
-//                     <html><body>
-//                         <h3>Build Succeeded ✅</h3>
-//                         <p><b>Job:</b> ${env.JOB_NAME}</p>
-//                         <p><b>Build:</b> <a href='${env.BUILD_URL}'>#${env.BUILD_NUMBER}</a></p>
-//                         <p><b>Node:</b> ${env.NODE_NAME ?: 'controller'}</p>
-//                         <p>Deployment path: <code>${env.DEPLOY_BASE}\\${env.APP_FOLDER}</code></p>
-//                         <hr/>
-//                         <p>Regards,<br/>Jenkins</p>
-//                     </body></html>
-//                 """
-
-//                 // Try emailext (rich) first, if plugin available. If emailext call fails (plugin missing), fall back to mail.
-//                 try {
-//                     emailext(
-//                         subject: subject,
-//                         mimeType: 'text/html',
-//                         to: recipient,
-//                         body: htmlBody,
-//                         attachLog: true
-//                     )
-//                     echo "Email sent using emailext to ${recipient}"
-//                 } catch (e) {
-//                     echo "emailext not available or failed: ${e.toString()}"
-//                     // fallback: use built-in mail step
-//                     mail to: recipient,
-//                          subject: subject,
-//                          body: "Build succeeded: ${env.JOB_NAME} #${env.BUILD_NUMBER}\n${env.BUILD_URL}"
-//                     echo "Email sent using mail to ${recipient}"
-//                 }
-//             }
-//         }
-
-//         failure {
-//             echo 'Build failed — sending failure notification.'
-
-//             script {
-//                 def recipient = null
-//                 try {
-//                     withCredentials([string(credentialsId: 'personal-email', variable: 'RECIPIENT')]) {
-//                         recipient = env.RECIPIENT
-//                     }
-//                 } catch (err) {
-//                     recipient = env.PERSONAL_EMAIL
-//                     echo "personal-email credential not found, falling back to PERSONAL_EMAIL: ${recipient}"
-//                 }
-
-//                 def subject = "FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
-//                 def htmlBody = """
-//                     <html><body>
-//                         <h3>Build Failed ❌</h3>
-//                         <p><b>Job:</b> ${env.JOB_NAME}</p>
-//                         <p><b>Build:</b> <a href='${env.BUILD_URL}'>#${env.BUILD_NUMBER}</a></p>
-//                         <p>Please check the console output for more details.</p>
-//                         <hr/>
-//                         <p>Regards,<br/>Jenkins</p>
-//                     </body></html>
-//                 """
-
-//                 try {
-//                     emailext(
-//                         subject: subject,
-//                         mimeType: 'text/html',
-//                         to: recipient,
-//                         body: htmlBody,
-//                         attachLog: true
-//                     )
-//                     echo "Failure email sent using emailext to ${recipient}"
-//                 } catch (e) {
-//                     echo "emailext not available or failed: ${e.toString()}"
-//                     mail to: recipient,
-//                          subject: subject,
-//                          body: "Build FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}\n${env.BUILD_URL}"
-//                     echo "Failure email sent using mail to ${recipient}"
-//                 }
-//             }
-//         }
-
-//         always {
-//             echo 'Post actions completed.'
-//         }
-//     }
-// }
-
-// the pipeline getting success but come to Email is not recived
 // Jenkinsfile - robust pipeline that sends email notifications
 // pipeline {
 //     agent any
@@ -804,28 +499,184 @@
 
 
 
+// pipeline {
+//     agent any
+
+//     environment {
+//         GIT_CREDENTIALS     = 'token'
+//         REPO_URL            = 'https://github.com/Suhasreddy257/frontend_xrdashboard.git'
+
+//         DEPLOY_BASE         = 'D:\\buildforpipeline'
+//         APP_FOLDER          = 'xr-dashboard\\browser'
+
+//         NODE_PATH           = 'C:\\Program Files\\nodejs'
+
+//         IIS_SITE_NAME       = 'XRdashboardfrontend'
+//         IIS_PORT            = '9005'
+
+//         EXTRA_FOLDER_SOURCE = 'D:\\extra'
+
+//         // Your email – used by the mail() step
+//         PERSONAL_EMAIL      = 'reddydr257@gmail.com'
+//     }
+
+//     stages {
+//         stage('Checkout & Build') {
+//             steps {
+//                 withEnv(["PATH=${NODE_PATH};${env.PATH}"]) {
+//                     git branch: 'main',
+//                         credentialsId: "${GIT_CREDENTIALS}",
+//                         url: "${REPO_URL}"
+
+//                     bat 'node -v'
+//                     bat 'npm -v'
+
+//                     bat 'npm install'
+//                     bat 'npm run build'
+//                 }
+//             }
+//         }
+
+//         stage('Deploy to Folder') {
+//             steps {
+//                 bat '''
+//                 echo Cleaning old deploy folder...
+//                 if exist "%DEPLOY_BASE%\\%APP_FOLDER%" (
+//                     rmdir /S /Q "%DEPLOY_BASE%\\%APP_FOLDER%"
+//                 )
+
+//                 echo Creating target folder...
+//                 mkdir "%DEPLOY_BASE%\\%APP_FOLDER%"
+
+//                 echo Copying ONLY inner build folder...
+//                 xcopy /E /I /Y "dist\\xr-dashboard\\browser\\*" "%DEPLOY_BASE%\\%APP_FOLDER%\\"
+
+//                 echo Copying EXTRA folder...
+//                 if exist "%EXTRA_FOLDER_SOURCE%" (
+//                     xcopy /E /I /Y "%EXTRA_FOLDER_SOURCE%\\*" "%DEPLOY_BASE%\\%APP_FOLDER%\\"
+//                 ) else (
+//                     echo EXTRA FOLDER NOT FOUND: %EXTRA_FOLDER_SOURCE%
+//                 )
+//                 '''
+//             }
+//         }
+
+//         stage('Update IIS Site & Restart') {
+//             steps {
+//                 powershell '''
+//                     Import-Module WebAdministration
+
+//                     $siteName     = $env:IIS_SITE_NAME
+//                     $physicalPath = "$env:DEPLOY_BASE\\$env:APP_FOLDER"
+//                     $port         = [int]$env:IIS_PORT
+
+//                     Write-Host "Setting IIS Physical Path to $physicalPath"
+
+//                     $site = Get-Item "IIS:\\Sites\\$siteName" -ErrorAction Stop
+
+//                     Set-ItemProperty "IIS:\\Sites\\$siteName" -Name physicalPath -Value $physicalPath
+
+//                     $pattern = "*:" + $port + ":*"
+//                     $bindings = $site.Bindings.Collection
+//                     $hasPortBinding = $bindings | Where-Object { $_.bindingInformation -like $pattern }
+
+//                     if (-not $hasPortBinding) {
+//                         New-WebBinding -Name $siteName -Protocol "http" -Port $port -IPAddress "*" -HostHeader ""
+//                     }
+
+//                     Restart-WebItem "IIS:\\Sites\\$siteName"
+//                 '''
+//             }
+//         }
+//     }
+
+//     post {
+//         success {
+//             echo 'Build succeeded — sending success email...'
+
+//             mail to: "${env.PERSONAL_EMAIL}",
+//                  subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+//                  body: """Hello Suhas,
+
+// The Jenkins job '${env.JOB_NAME}' build #${env.BUILD_NUMBER} completed SUCCESSFULLY.
+
+// Job name : ${env.JOB_NAME}
+// Build URL: ${env.BUILD_URL}
+
+// Regards,
+// Jenkins
+// """
+//         }
+
+//         failure {
+//             echo 'Build failed — sending failure email...'
+
+//             mail to: "${env.PERSONAL_EMAIL}",
+//                  subject: "FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+//                  body: """Hello Suhas,
+
+// The Jenkins job '${env.JOB_NAME}' build #${env.BUILD_NUMBER} has FAILED.
+
+// Job name : ${env.JOB_NAME}
+// Build URL: ${env.BUILD_URL}
+
+// Please check the console output in Jenkins for details.
+
+// Regards,
+// Jenkins
+// """
+//         }
+
+//         always {
+//             echo 'Post actions finished.'
+//         }
+//     }
+// }
+//in the above pipeline is getting succes with all requirement up to succes email 
+
 pipeline {
     agent any
 
     environment {
-        GIT_CREDENTIALS     = 'token'
-        REPO_URL            = 'https://github.com/Suhasreddy257/frontend_xrdashboard.git'
+        GIT_CREDENTIALS = 'token'
+        REPO_URL        = 'https://github.com/Suhasreddy257/frontend_xrdashboard.git'
 
-        DEPLOY_BASE         = 'D:\\buildforpipeline'
-        APP_FOLDER          = 'xr-dashboard\\browser'
+        // Base deploy directory (no timestamp here)
+        DEPLOY_BASE     = 'D:\\buildforpipeline'
+        APP_FOLDER      = 'xr-dashboard\\browser'
 
-        NODE_PATH           = 'C:\\Program Files\\nodejs'
+        NODE_PATH       = 'C:\\Program Files\\nodejs'
 
-        IIS_SITE_NAME       = 'XRdashboardfrontend'
-        IIS_PORT            = '9005'
+        IIS_SITE_NAME   = 'XRdashboardfrontend'
+        IIS_PORT        = '9005'
 
         EXTRA_FOLDER_SOURCE = 'D:\\extra'
 
         // Your email – used by the mail() step
-        PERSONAL_EMAIL      = 'reddydr257@gmail.com'
+        PERSONAL_EMAIL  = 'reddydr257@gmail.com'
     }
 
     stages {
+
+        stage('Prepare Deploy Folder') {
+            steps {
+                script {
+                    // Example: 2025-11-21_10-45-30
+                    def ts = new Date().format("yyyy-MM-dd_HH-mm-ss")
+
+                    // Folder name WITH timestamp (relative under DEPLOY_BASE)
+                    // e.g. xr-dashboard\browser_2025-11-21_10-45-30
+                    env.DEPLOY_FOLDER_NAME = "${APP_FOLDER}_${ts}"
+
+                    // Full path, e.g. D:\buildforpipeline\xr-dashboard\browser_2025-11-21_10-45-30
+                    env.DEPLOY_TARGET = "${DEPLOY_BASE}\\${env.DEPLOY_FOLDER_NAME}"
+
+                    echo "Deploy timestamp       : ${ts}"
+                    echo "Deploy target full path: ${env.DEPLOY_TARGET}"
+                }
+            }
+        }
+
         stage('Checkout & Build') {
             steps {
                 withEnv(["PATH=${NODE_PATH};${env.PATH}"]) {
@@ -845,23 +696,22 @@ pipeline {
         stage('Deploy to Folder') {
             steps {
                 bat '''
-                echo Cleaning old deploy folder...
-                if exist "%DEPLOY_BASE%\\%APP_FOLDER%" (
-                    rmdir /S /Q "%DEPLOY_BASE%\\%APP_FOLDER%"
+                echo Creating target folder (older builds are kept)...
+                if not exist "%DEPLOY_TARGET%" (
+                    mkdir "%DEPLOY_TARGET%"
                 )
 
-                echo Creating target folder...
-                mkdir "%DEPLOY_BASE%\\%APP_FOLDER%"
+                echo Copying ONLY inner build folder to %DEPLOY_TARGET% ...
+                xcopy /E /I /Y "dist\\xr-dashboard\\browser\\*" "%DEPLOY_TARGET%\\"
 
-                echo Copying ONLY inner build folder...
-                xcopy /E /I /Y "dist\\xr-dashboard\\browser\\*" "%DEPLOY_BASE%\\%APP_FOLDER%\\"
-
-                echo Copying EXTRA folder...
+                echo Copying EXTRA folder (if exists)...
                 if exist "%EXTRA_FOLDER_SOURCE%" (
-                    xcopy /E /I /Y "%EXTRA_FOLDER_SOURCE%\\*" "%DEPLOY_BASE%\\%APP_FOLDER%\\"
+                    xcopy /E /I /Y "%EXTRA_FOLDER_SOURCE%\\*" "%DEPLOY_TARGET%\\"
                 ) else (
                     echo EXTRA FOLDER NOT FOUND: %EXTRA_FOLDER_SOURCE%
                 )
+
+                echo Deploy completed into: %DEPLOY_TARGET%
                 '''
             }
         }
@@ -872,15 +722,17 @@ pipeline {
                     Import-Module WebAdministration
 
                     $siteName     = $env:IIS_SITE_NAME
-                    $physicalPath = "$env:DEPLOY_BASE\\$env:APP_FOLDER"
+                    $physicalPath = $env:DEPLOY_TARGET   # full timestamped path
                     $port         = [int]$env:IIS_PORT
 
                     Write-Host "Setting IIS Physical Path to $physicalPath"
 
-                    $site = Get-Item "IIS:\\Sites\\$siteName" -ErrorAction Stop
+                    $site = Get-Item ("IIS:\\Sites\\" + $siteName) -ErrorAction Stop
 
-                    Set-ItemProperty "IIS:\\Sites\\$siteName" -Name physicalPath -Value $physicalPath
+                    # Point site to the new timestamped folder
+                    Set-ItemProperty ("IIS:\\Sites\\" + $siteName) -Name physicalPath -Value $physicalPath
 
+                    # Ensure binding exists for the configured port
                     $pattern = "*:" + $port + ":*"
                     $bindings = $site.Bindings.Collection
                     $hasPortBinding = $bindings | Where-Object { $_.bindingInformation -like $pattern }
@@ -889,7 +741,9 @@ pipeline {
                         New-WebBinding -Name $siteName -Protocol "http" -Port $port -IPAddress "*" -HostHeader ""
                     }
 
-                    Restart-WebItem "IIS:\\Sites\\$siteName"
+                    Restart-WebItem ("IIS:\\Sites\\" + $siteName)
+
+                    Write-Host "IIS site '$siteName' now points to: $physicalPath"
                 '''
             }
         }
@@ -900,16 +754,23 @@ pipeline {
             echo 'Build succeeded — sending success email...'
 
             mail to: "${env.PERSONAL_EMAIL}",
-                 subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                 subject: "FRONTEND SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                  body: """Hello Suhas,
 
-The Jenkins job '${env.JOB_NAME}' build #${env.BUILD_NUMBER} completed SUCCESSFULLY.
+The FRONTEND Jenkins job '${env.JOB_NAME}' build #${env.BUILD_NUMBER} completed SUCCESSFULLY.
 
-Job name : ${env.JOB_NAME}
-Build URL: ${env.BUILD_URL}
+Details:
+- Job name      : ${env.JOB_NAME}
+- Build URL     : ${env.BUILD_URL}
+- Deploy folder : ${env.DEPLOY_TARGET}
+- IIS site      : ${env.IIS_SITE_NAME}
+- Port          : ${env.IIS_PORT}
+
+Older deploy folders are kept under:
+${env.DEPLOY_BASE}
 
 Regards,
-Jenkins
+Jenkins (Frontend pipeline)
 """
         }
 
@@ -917,18 +778,21 @@ Jenkins
             echo 'Build failed — sending failure email...'
 
             mail to: "${env.PERSONAL_EMAIL}",
-                 subject: "FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                 subject: "FRONTEND FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                  body: """Hello Suhas,
 
-The Jenkins job '${env.JOB_NAME}' build #${env.BUILD_NUMBER} has FAILED.
+The FRONTEND Jenkins job '${env.JOB_NAME}' build #${env.BUILD_NUMBER} has FAILED.
 
-Job name : ${env.JOB_NAME}
-Build URL: ${env.BUILD_URL}
+Job name  : ${env.JOB_NAME}
+Build URL : ${env.BUILD_URL}
+
+(If a deploy folder was created before failure, the last target was:)
+${env.DEPLOY_TARGET}
 
 Please check the console output in Jenkins for details.
 
 Regards,
-Jenkins
+Jenkins (Frontend pipeline)
 """
         }
 
